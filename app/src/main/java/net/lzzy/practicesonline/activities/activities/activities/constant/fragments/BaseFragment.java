@@ -36,7 +36,7 @@ public abstract class BaseFragment extends Fragment {
 
     protected abstract int getLayoutRes();
 
-    <T extends View> T find(@IdRes int id) {
+    protected <T extends View> T find(@IdRes int id) {
         return Objects.requireNonNull(getView()).findViewById(id);
     }
     public abstract void sarch(String kw);

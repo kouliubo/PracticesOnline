@@ -1,15 +1,21 @@
 package net.lzzy.practicesonline.activities.activities.activities.constant.models;
 
+import net.lzzy.practicesonline.activities.activities.activities.constant.constants.ApiConstants;
+import net.lzzy.sqllib.Ignored;
+import net.lzzy.sqllib.Jsonable;
 import net.lzzy.sqllib.Sqlitable;
 
-import java.util.List;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.UUID;
 
 /**
  * Created by lzzy_gxy on 2019/4/16.
  * Description:
  */
-public class Option  implements Sqlitable {
+public class Option  implements Sqlitable, Jsonable {
+    @Ignored
     public static final String COL_QUESTION_ID = "questionId";
     private String content;
     private String label;
@@ -65,5 +71,18 @@ public class Option  implements Sqlitable {
     @Override
     public boolean needUpdate() {
         return false;
+    }
+
+    @Override
+    public JSONObject toJson() throws JSONException {
+        return null;
+    }
+
+    @Override
+    public void fromJson(JSONObject json) throws JSONException {
+        content = json.getString(ApiConstants.JSON_OPTION_CONTENT);
+        label = json.getString(ApiConstants.JSON_OPTION_LABEL);
+        apiId = json.getInt(ApiConstants.JSON_OPTION_API_ID);
+
     }
 }

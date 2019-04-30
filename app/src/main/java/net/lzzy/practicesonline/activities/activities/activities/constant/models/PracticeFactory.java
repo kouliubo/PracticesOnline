@@ -2,7 +2,6 @@ package net.lzzy.practicesonline.activities.activities.activities.constant.model
 
 import net.lzzy.practicesonline.activities.activities.activities.constant.constants.DbConstants;
 import net.lzzy.practicesonline.activities.activities.activities.constant.utils.AppUtils;
-import net.lzzy.sqllib.DbPackager;
 import net.lzzy.sqllib.SqlRepository;
 
 import java.util.ArrayList;
@@ -52,7 +51,7 @@ public class PracticeFactory {
 
     public boolean isPracticeInDb(Practice practice) {
         try {
-            return repository.getByKeyword(String.valueOf(practice.getApild()),
+            return repository.getByKeyword(String.valueOf(practice.getApiId()),
                     new String[]{Practice.COL_API_ID}, true)
                     .size() > 0;
         } catch (IllegalAccessException | InstantiationException e) {
@@ -88,12 +87,25 @@ public class PracticeFactory {
                 }
             }
             repository.exeSqls(sqlActions);
-            if (!isPracticeInDb(practice)){
+            if (!isPracticeInDb(practice)) {
 
             }
             return true;
         } catch (Exception e) {
             return false;
         }
+    }
+
+    public UUID getPracticeId(int apiId) {
+        try {
+            List<Practice> practices = repository.getByKeyword(String.valueOf(apiId),
+                    new String[]{Practice.COL_API_ID}, true);
+            if (practices.size() > 0) {
+                return practices.get(0).getId();
+            }
+        } catch (IllegalAccessException | InstantiationException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 }
