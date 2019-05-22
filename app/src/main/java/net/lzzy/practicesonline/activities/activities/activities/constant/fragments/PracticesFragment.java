@@ -2,6 +2,8 @@ package net.lzzy.practicesonline.activities.activities.activities.constant.fragm
 
 import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Message;
 import android.view.MotionEvent;
@@ -33,6 +35,7 @@ import net.lzzy.sqllib.ViewHolder;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -103,16 +106,17 @@ public class PracticesFragment extends BaseFragment {
 
     private void saveQuestions(String json, UUID practiceId) {
         try {
-            List<Question> questions = QuestionService.getQuestions(json, practiceId);
-            factory.saceQuestions(questions, practiceId);
-            for (Practice practice : practices) {
-                if (practice.getId().equals(practiceId)) {
+            List<Question> questions= QuestionService.getQuestions(json,practiceId);
+            factory.saveQuestions(questions,practiceId);
+            for (Practice practice:practices){
+                if (practice.getId().equals(practiceId)){
                     practice.setDownloaded(true);
                 }
+                adapter.notifyDataSetChanged();
             }
-            adapter.notifyDataSetChanged();
         } catch (Exception e) {
-            Toast.makeText(getContext(), "下载失败请重试!", Toast.LENGTH_SHORT).show();
+            e.printStackTrace();
+            Toast.makeText(getContext(), "下载失败，请重试", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -186,19 +190,45 @@ public class PracticesFragment extends BaseFragment {
         }
 
         @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            ViewUtils.showProgress(fragment.get().getContext(), "开始下载题目");
+        }
+
+        @Override
         protected String doInBackground(Practice... practices) {
-            int apiId = practice.getApiId();
-            return null;
+            try {
+                return QuestionService.getQuestionsOfPracticeFromServer(practice.getApiId());
+            } catch (IOException e) {
+                return e.getMessage();
+            }
         }
 
         @Override
         protected void onPostExecute(String s) {
             super.onPostExecute(s);
+            fragment.get().saveQuestion(s, practice.getId());
+            ViewUtils.dismissProgress();
         }
     }
 
-    private SwipeRefreshLayout.OnRefreshListener
-            refreshListener = this::downloadPracticesAsync;
+    private void saveQuestion(String json, UUID practiceId) {
+        try {
+            List<Question> questions = QuestionService.getQuestions(json, practiceId);
+            factory.saveQuestions(questions, practiceId);
+            for (Practice practice : practices) {
+                if (practice.getId().equals(practiceId)) {
+                    practice.setDownloaded(true);
+                }
+                adapter.notifyDataSetChanged();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            Toast.makeText(getContext(), "下载失败请重试" + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private SwipeRefreshLayout.OnRefreshListener refreshListener = this::downloadPracticesAsync;
 
     private void downloadPractices() {
         tvTime.setVisibility(View.VISIBLE);
@@ -236,29 +266,40 @@ public class PracticesFragment extends BaseFragment {
 
     private void loadPractices() {
         practices = factory.get();
-        Collections.sort(practices, ((o1, o2) -> o2.getDownloadDate().compareTo(o1.getDownloadDate())));
-        adapter = new GenericAdapter<Practice>(getContext(), R.layout.practice_item, practices) {
+        //列表排序
+        Collections.sort(practices, new Comparator<Practice>() {
+            @Override
+            public int compare(Practice o1, Practice o2) {
+                return o2.getDownloadDate().compareTo(o1.getDownloadDate());
+            }
+        });
+        //列表显示
+        adapter = new GenericAdapter<Practice>(getActivity(), R.layout.practice_item, practices) {
             @Override
             public void populate(ViewHolder holder, Practice practice) {
                 holder.setTextView(R.id.practice_item_tv_name, practice.getName());
-                Button btnOutlines = holder.getView(R.id.practice_item_btn_outlines);
+                TextView tvOutlines = holder.getView(R.id.practice_item_btn_outlines);
                 if (practice.isDownloaded()) {
-                    btnOutlines.setVisibility(View.VISIBLE);
-                    btnOutlines.setOnClickListener(v -> new AlertDialog.Builder(getContext())
+                    tvOutlines.setVisibility(View.VISIBLE);
+                    tvOutlines.setOnClickListener(v -> new AlertDialog.Builder(getContext())
                             .setMessage(practice.getOutlines())
                             .show());
                 } else {
-                    btnOutlines.setVisibility(View.GONE);
+                    tvOutlines.setVisibility(View.GONE);
                 }
                 Button btnDel = holder.getView(R.id.practice_item_btn_del);
+                btnDel.setVisibility(View.GONE);
                 btnDel.setOnClickListener(v -> new AlertDialog.Builder(getContext())
-                        .setMessage("是否删除")
-                        .setPositiveButton("删除", (dialog, which) -> {
-                            isDeleting=false;
-                            adapter.remove(practice);
-                        })
+                        .setTitle("删除确认")
+                        .setMessage("要删除该章节吗？")
                         .setNegativeButton("取消", null)
-                        .show());
+                        .setPositiveButton("确认", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                isDeleting = false;
+                                adapter.remove(practice);
+                            }
+                        }).show());
                 int visible = isDeleting ? View.VISIBLE : View.GONE;
                 btnDel.setVisibility(visible);
                 holder.getConvertView().setOnTouchListener(new ViewUtils.AbstractTouchListener() {
@@ -313,29 +354,29 @@ public class PracticesFragment extends BaseFragment {
     }
 
     private void PerformItemClick(Practice practice) {
-        if (practice.isDownloaded() && listener != null) {
-            listener.onPracticeSelected(practice.getId().toString(), practice.getApiId());
-        } else {
+        if (practice.isDownloaded()&&listener!=null){
+            listener.OnPractice(practice.getId().toString(),practice.getApiId());
+        }else {
             new AlertDialog.Builder(getContext())
-                    .setMessage("确定下载吗？")
-                    .setPositiveButton("下载", (dialog, which) -> downloadQuestions(practice.getApiId()))
-                    .setNegativeButton("取消", null)
+                    .setMessage("下载该章节题目吗？")
+                    .setPositiveButton("下载",(dialog, which) -> downloadQuestionsAsync(practice))
+                    .setNeutralButton("取消",null)
                     .show();
         }
     }
 
     private void downloadQuestions(int apiId) {
-        ViewUtils.showProgress(getContext(), "下载中...");
-        executor.execute(() -> {
+        ViewUtils.showProgress(getContext(),"正在下载...");
+        executor.execute(()->{
             try {
-                String json = QuestionService.getQuestionsOfPracticeFromServer(apiId);
-                Message msg = handler.obtainMessage(WHAT_QUESTION_DONE, json);
-                msg.arg1 = apiId;
+                String json=QuestionService.getQuestionsOfPracticeFromServer(apiId);
+                Message msg=handler.obtainMessage(WHAT_QUESTION_DONE,json);
+                msg.arg1=apiId;
                 handler.sendMessage(msg);
             } catch (IOException e) {
-                handler.sendMessage(handler.obtainMessage(WHAT_QUESTION_EXCEPTION, e.getMessage()));
+                e.printStackTrace();
+                handler.sendMessage(handler.obtainMessage(WHAT_QUESTION_EXCEPTION,e.getMessage()));
             }
-
         });
     }
 
@@ -344,17 +385,17 @@ public class PracticesFragment extends BaseFragment {
     }
 
     private void initViews() {
-        lv = find(R.id.fragment_practices_lv);
-        TextView tvNone = find(R.id.fragment_practices_tv_none);
+        lv = findViewById(R.id.fragment_practices_lv);
+        TextView tvNone = findViewById(R.id.fragment_practices_tv_none);
         lv.setEmptyView(tvNone);
-        swipe = find(R.id.fragment_practices_swipe);
-        tvHint = find(R.id.fragment_practices_tv_hint);
-        tvTime = find(R.id.fragment_practices_tv_time);
+        swipe = findViewById(R.id.fragment_practices_swipe);
+        tvHint = findViewById(R.id.fragment_practices_tv_hint);
+        tvTime = findViewById(R.id.fragment_practices_tv_time);
         tvTime.setText(UserCookies.getInstance().getLastRefreshTime());
         tvHint.setVisibility(View.GONE);
         tvTime.setVisibility(View.GONE);
-        find(R.id.fragment_practices_lv).setOnTouchListener(new ViewUtils.AbstractTouchListener() {
-
+        swipe.setColorSchemeColors((Color.parseColor("#CD853F")), Color.parseColor("#CD853F"));
+        findViewById(R.id.fragment_practices_lv).setOnTouchListener(new ViewUtils.AbstractTouchListener() {
             @Override
             protected boolean handleTouch(MotionEvent event) {
                 isDeleting = false;
@@ -405,6 +446,6 @@ public class PracticesFragment extends BaseFragment {
     }
 
     public interface PracticeSelectedListener {
-        void onPracticeSelected(String practiceId, int apiId);
+        void OnPractice(String practiceId, int apiId);
     }
 }

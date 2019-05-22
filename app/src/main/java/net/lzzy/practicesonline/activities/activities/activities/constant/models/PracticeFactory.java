@@ -68,11 +68,11 @@ public class PracticeFactory {
         }
     }
 
-    public void saceQuestions(List<Question> questions, UUID practiceId) {
-        for (Question q : questions) {
-            QuestionFactory.getInstance().insert(q);
+    public void saveQuestions(List<Question> list, UUID id) {
+        for (Question q : list) {
+            QuestionFactory.getInstance().inset(q);
         }
-        setPracticeDown(practiceId.toString());
+        setPracticeDown(id.toString());
     }
 
     public boolean deletePracticeAndRelated(Practice practice) {
@@ -95,6 +95,7 @@ public class PracticeFactory {
             return false;
         }
     }
+
 
     public UUID getPracticeId(int apiId) {
         try {

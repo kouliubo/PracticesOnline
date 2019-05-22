@@ -21,7 +21,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".activities.activities.activities.constant.activities.ResultActivity"/>
         <activity android:name=".activities.activities.activities.constant.activities.PracticesActivity"/>
+        <service android:name=".activities.activities.activities.constant.network.DetectWebService"/>
     </application>
 
 </manifest>

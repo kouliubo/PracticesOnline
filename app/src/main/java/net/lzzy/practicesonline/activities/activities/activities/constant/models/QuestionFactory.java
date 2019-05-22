@@ -59,13 +59,14 @@ public class QuestionFactory {
         return new ArrayList<>();
     }
 
-    public void insert(Question question) {
-        String q = repository.getInsertString(question);
+    public void inset(Question question) {
+        List<Option> options = question.getOptions();
         List<String> sqlActions = new ArrayList<>();
-        for (Option option : question.getOptions()) {
+        for (Option option : options) {
             sqlActions.add(optionRepository.getInsertString(option));
+
         }
-        sqlActions.add(q);
+        sqlActions.add(repository.getInsertString(question));
         repository.exeSqls(sqlActions);
     }
 

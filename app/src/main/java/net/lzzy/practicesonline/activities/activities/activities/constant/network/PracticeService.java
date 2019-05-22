@@ -2,7 +2,10 @@ package net.lzzy.practicesonline.activities.activities.activities.constant.netwo
 
 import net.lzzy.practicesonline.activities.activities.activities.constant.constants.ApiConstants;
 import net.lzzy.practicesonline.activities.activities.activities.constant.models.Practice;
+import net.lzzy.practicesonline.activities.activities.activities.constant.models.view.PracticeResult;
 import net.lzzy.sqllib.JsonConverter;
+
+import org.json.JSONException;
 
 import java.io.IOException;
 import java.util.List;
@@ -18,5 +21,9 @@ public class PracticeService {
     public static List<Practice> getPractices(String json) throws Exception {
         JsonConverter<Practice> converter = new JsonConverter<Practice>(Practice.class);
         return converter.getArray(json);
+    }
+
+    public static int postResult(PracticeResult result) throws JSONException,IOException{
+        return ApiService.okPost(ApiConstants.URL_RESULT,result.toJson());
     }
 }

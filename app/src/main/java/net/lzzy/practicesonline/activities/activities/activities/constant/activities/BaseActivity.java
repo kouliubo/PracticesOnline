@@ -17,14 +17,14 @@ import net.lzzy.practicesonline.activities.activities.activities.constant.utils.
 public abstract class BaseActivity extends AppCompatActivity {
 
     private Fragment fragment;
-
+    private FragmentManager manager;
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         supportRequestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(getLayoutRes());
         AppUtils.addActivity(this);
-        FragmentManager manager = getSupportFragmentManager();
+        manager= getSupportFragmentManager();
         fragment = manager.findFragmentById(getContainerId());
         if (fragment == null) {
             fragment = createFragment();
@@ -32,8 +32,12 @@ public abstract class BaseActivity extends AppCompatActivity {
         }
     }
 
-    protected Fragment getFragment() {
+    protected Fragment getFragment(){
         return fragment;
+
+    }
+    protected FragmentManager getManager(){
+        return manager;
     }
 
     @Override
@@ -56,21 +60,18 @@ public abstract class BaseActivity extends AppCompatActivity {
 
     /**
      * Activity的布局文件id
-     *
      * @return 布局资源id
      */
     protected abstract int getLayoutRes();
 
     /**
      * fragment容器的id
-     *
      * @return id
      */
     protected abstract int getContainerId();
 
     /**
      * 生成托管的Fragment对象
-     *
      * @return fragment
      */
     protected abstract Fragment createFragment();

@@ -26,6 +26,7 @@ public class DetectWebService extends Service {
     private int localCount;
     private static final int NOTIFICATION_DETECT_ID = 0;
     private NotificationManager manager;
+    public static final String EXTRA_REFRESH = "refresh";
 
 
     @Nullable
